@@ -1,2 +1,2 @@
-# the-truth-detectors-
+# the-truth-detectors
 my multiplayer game server
