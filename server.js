@@ -212,6 +212,30 @@ io.on('connection', (socket) => {
     broadcastRoom(room);
   });
 
+  // ── OPEN ROLE SCREEN FOR ALL PLAYERS (host only) ────────────────────────────
+  socket.on('game:roles_open', ({ scenario }) => {
+    const found = getRoomOf(socket.id);
+    if (!found) return;
+    const { room } = found;
+
+    if (socket.id !== room.hostId) {
+      socket.emit('room:error', { msg: 'Only the host can open role selection.' });
+      return;
+    }
+
+    // Store scenario on room for later use at game:start
+    room.pendingScenario = scenario;
+    room.phase = 'roles';
+
+    // Broadcast to ALL players in room — everyone navigates to role screen
+    io.to(room.code).emit('game:roles_open', {
+      scenario: scenario,
+      players:  [...room.players.values()],
+    });
+
+    console.log(`[G] roles_open  ${room.code}`);
+  });
+
   // ── START GAME (host only) ───────────────────────────────────────────────────
   socket.on('game:start', ({ scenario }) => {
     const found = getRoomOf(socket.id);
@@ -230,7 +254,7 @@ io.on('connection', (socket) => {
     }
 
     room.phase    = 'game';
-    room.scenario = scenario; // host sends the already-built question pages
+    room.scenario = scenario || room.pendingScenario;
 
     // Reset scores
     room.players.forEach(p => { p.cp = 0; p.correct = 0; });
@@ -450,4 +474,4 @@ httpServer.listen(PORT, () => {
   console.log(`\n🎬 Behind the Truth — Multiplayer Server`);
   console.log(`   Listening on port ${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/health\n`);
-});
+});q
