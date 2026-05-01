@@ -3799,7 +3799,7 @@ window._atmoSetExposure = function(quality){
 // ═══════════════════════════════════════════════════════════════════════════
 //  STAGE 2 — MENU, ACCOUNTS, SETTINGS, MODE SELECT
 // ═══════════════════════════════════════════════════════════════════════════
-const S2 = (() => {
+const S2 = window.S2 = (() => {
 
   // ── State ──────────────────────────────────────────────────────────────
   let currentUser = null;   // { name, passHash }
@@ -4147,7 +4147,7 @@ window.addEventListener('load', () => S2.init());
 // ═══════════════════════════════════════════════════════════════════════════
 //  STAGE 3 — ROLE SELECTION + PAPER MECHANIC + SCORING ENGINE
 // ═══════════════════════════════════════════════════════════════════════════
-const S3 = (() => {
+const S3 = window.S3 = (() => {
 
   // ── Game Data ───────────────────────────────────────────────────────────
   // STAGE 8: Theatrical performance model.
@@ -5614,7 +5614,7 @@ const S3 = (() => {
 // ═══════════════════════════════════════════════════════════════════════════
 //  STAGE 4 — RESULTS SCREEN  (winner reveal, cards, sarcasm, confetti, share)
 // ═══════════════════════════════════════════════════════════════════════════
-const S4 = (() => {
+const S4 = window.S4 = (() => {
 
   // ── Sarcastic comments pool ─────────────────────────────────────────────
   const SARCASM_POOL = [
@@ -9225,7 +9225,7 @@ window.addEventListener('load', () => setTimeout(() => S11.init(), 200));
      STAGE 12 — ONLINE MULTIPLAYER CLIENT MODULE
 ══════════════════════════════════════════════════ -->
 <script>
-const S12 = (() => {
+const S12 = window.S12 = (() => {
 
   // ─── Config ─────────────────────────────────────────────────────────────────
   // Server URL priority: localStorage override → auto-detect → default Railway URL
