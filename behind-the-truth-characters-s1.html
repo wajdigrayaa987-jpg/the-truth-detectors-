@@ -203,8 +203,12 @@
   border:2px solid rgba(80,220,255,0);
   transition:border-color 0.15s;
 }
-.s12-sync-ring.flash { border-color:rgba(80,220,255,0.4); animation:s12SyncFlash 0.6s ease forwards; }
-@keyframes s12SyncFlash { 0%{opacity:1}100%{opacity:0} }
+#ingame-exit-btn:hover {
+  color:rgba(255,100,100,0.8) !important;
+  border-color:rgba(255,100,100,0.35) !important;
+  background:rgba(0,0,0,0.75) !important;
+}
+
 </style>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime:wght@400;700&display=swap');
@@ -2821,6 +2825,62 @@
 </div><!-- /studio-paper-overlay -->
 
 <!-- ══════════════════════════════════════════════════
+     IN-GAME EXIT BUTTON + CONFIRMATION MODAL
+══════════════════════════════════════════════════ -->
+<!-- Exit button — visible only while game is active -->
+<button id="ingame-exit-btn" onclick="S3.confirmExit()" style="
+  display:none;
+  position:fixed;top:24px;right:24px;z-index:450;
+  font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:rgba(255,255,255,0.35);
+  background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.12);
+  padding:7px 16px 6px;cursor:pointer;
+  clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
+  backdrop-filter:blur(4px);
+  transition:color 0.2s,border-color 0.2s,background 0.2s;
+">✕ Exit</button>
+
+<!-- Confirmation modal -->
+<div id="exit-confirm-modal" style="
+  display:none;position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,0.82);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:linear-gradient(168deg,#f7f2e2,#ede4c5 55%,#e6dab8);
+    width:min(360px,88vw);padding:40px 32px 32px;position:relative;
+    box-shadow:0 2px 0 #c4b27a,0 4px 0 #b8a268,0 16px 60px rgba(0,0,0,0.8);
+    clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);
+  ">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#1a0e02;text-align:center;margin-bottom:8px;">Leave Broadcast?</div>
+    <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:1px;color:rgba(60,40,10,0.55);text-align:center;line-height:1.7;margin-bottom:28px;">
+      The broadcast will cut to results.<br>Your current scores will be saved.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="S3.cancelExit()" style="
+        font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;
+        padding:11px 24px 10px;cursor:pointer;background:transparent;
+        color:rgba(80,55,15,0.6);border:1px solid rgba(80,55,15,0.3);
+        clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
+        transition:all 0.2s;
+      " onmouseover="this.style.color='rgba(80,55,15,0.9)';this.style.borderColor='rgba(80,55,15,0.6)'"
+         onmouseout="this.style.color='rgba(80,55,15,0.6)';this.style.borderColor='rgba(80,55,15,0.3)'">
+        Stay on Air
+      </button>
+      <button onclick="S3.doExit()" style="
+        font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;
+        padding:11px 24px 10px;cursor:pointer;
+        background:#2a1a06;color:rgba(255,220,120,0.9);border:none;
+        clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
+        box-shadow:0 2px 12px rgba(0,0,0,0.4);transition:background 0.2s;
+      " onmouseover="this.style.background='#3d2a0a'" onmouseout="this.style.background='#2a1a06'">
+        End Broadcast
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
      STAGE 3 — ANSWER CHOICES PANEL
 ══════════════════════════════════════════════════ -->
 <div id="answer-choices-panel">
@@ -4742,6 +4802,7 @@ const S3 = window.S3 = (() => {
       }
       // Stage 7 — activate atmosphere
       if(window.S7) S7.onGameStart();
+      _showExitBtn();
     }, 400);
 
     playTone(440, 0.5, 'sine', 0.2);
@@ -5301,6 +5362,7 @@ const S3 = window.S3 = (() => {
 
   // ── End Game ──────────────────────────────────────────────────────────
   function endGame() {
+    _hideExitBtn();
     document.getElementById('studio-paper-overlay').classList.remove('active');
     document.getElementById('scoreboard').classList.remove('active');
     stopTimer();
@@ -5420,6 +5482,7 @@ const S3 = window.S3 = (() => {
       document.getElementById('studio-role-label').textContent = _roleLabel(myRole);
       currentPage = 0; currentQIdx = 0;
       renderPaperPage();
+      _showExitBtn();
       if(window.S7) S7.onGameStart();
     }, 400);
 
@@ -5565,6 +5628,29 @@ const S3 = window.S3 = (() => {
     if (labelEl) labelEl.textContent = _roleLabel(role);
   }
 
+  // ── Exit to main menu (mid-game) ─────────────────────────────────────
+  function _showExitBtn()  {
+    const btn = document.getElementById('ingame-exit-btn');
+    if (btn) btn.style.display = 'block';
+  }
+  function _hideExitBtn()  {
+    const btn = document.getElementById('ingame-exit-btn');
+    if (btn) btn.style.display = 'none';
+  }
+  function confirmExit() {
+    const modal = document.getElementById('exit-confirm-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+  function cancelExit() {
+    const modal = document.getElementById('exit-confirm-modal');
+    if (modal) modal.style.display = 'none';
+  }
+  function doExit() {
+    cancelExit();
+    _hideExitBtn();
+    endGame();
+  }
+
   // ── getScenario — used by S12 to send scenario to server ─────────────
   function getScenario() {
     return SCENARIO;
@@ -5684,6 +5770,9 @@ const S3 = window.S3 = (() => {
     isOnline: () => _onlineMode,
     _resetOnlineState,
     _reassignMyRole,
+    confirmExit,
+    cancelExit,
+    doExit,
   };
 
 })();
@@ -5956,11 +6045,13 @@ const S4 = window.S4 = (() => {
   }
 
   function returnMenu() {
+    _clearAutoRedirect();
     _stopConfetti();
-    // Reset all scenario question _done flags for replay
     try {
       document.getElementById('studio-paper-overlay')?.classList.remove('active');
       document.getElementById('scoreboard')?.classList.remove('active');
+      document.getElementById('ingame-exit-btn').style.display = 'none';
+      document.getElementById('exit-confirm-modal').style.display = 'none';
     } catch(e) {}
     S2.showScreen('menu-screen');
   }
