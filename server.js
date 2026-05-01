@@ -112,6 +112,36 @@ io.on('connection', (socket) => {
     console.log(`[R] created  ${code}  host=${playerName}`);
   });
 
+  socket.on('room:rejoin', ({ code, playerName }) => {
+    const upper = (code||'').toUpperCase().trim();
+    const room  = rooms.get(upper);
+    if (!room) { socket.emit('room:error', { msg: 'Room not found. The game may have ended.' }); return; }
+    // Don't allow rejoining a room that's already finished
+    if (room.phase === 'results') { socket.emit('room:error', { msg: 'Game already finished.' }); return; }
+    // Check if a player with the same name already exists (disconnected player rejoining)
+    let existingEntry = null;
+    for (const [sid, p] of room.players) {
+      if (p.name === (playerName||'').slice(0,24)) { existingEntry = [sid, p]; break; }
+    }
+    if (existingEntry) {
+      const [oldSid, oldPlayer] = existingEntry;
+      room.players.delete(oldSid);
+      oldPlayer.id = socket.id;
+      room.players.set(socket.id, oldPlayer);
+      // Update roles to point to new socket id
+      for (const [r, sid] of Object.entries(room.roles)) {
+        if (sid === oldSid) room.roles[r] = socket.id;
+      }
+      if (room.hostId === oldSid) room.hostId = socket.id;
+      socket.join(upper);
+      socket.emit('room:rejoined', { code: upper, snapshot: snapshot(room), phase: room.phase, roles: room.roles, scenario: room.scenario });
+      broadcast(room);
+      console.log(`[R] rejoined ${upper}  player=${playerName}`);
+    } else {
+      socket.emit('room:error', { msg: 'Could not find your player slot. Please join as a new player.' });
+    }
+  });
+
   socket.on('room:join', ({ code, playerName }) => {
     const upper = (code||'').toUpperCase().trim();
     const room  = rooms.get(upper);
@@ -189,6 +219,12 @@ io.on('connection', (socket) => {
     if (room.phase !== 'game' || !room.gameState.answerPending || room.gameState.activeQId !== qId) return;
     const q = room.scenario?.[room.gameState.pageIdx]?.questions?.[room.gameState.qIdx];
     if (!q) return;
+    // Only the player assigned to the responder role may submit
+    const respRole = q.answer?.role;
+    const respSid  = respRole ? room.roles[respRole] : null;
+    if (respSid && socket.id !== respSid) {
+      socket.emit('room:error', { msg: 'It is not your turn to answer.' }); return;
+    }
     const isCorrect = optionIdx === q.correctIdx;
     const isFast    = timeTaken !== undefined && timeTaken < 5000;
     const isSilly   = !isCorrect && optionIdx >= 2;
@@ -252,6 +288,13 @@ io.on('connection', (socket) => {
     if (room.hostId === socket.id) {
       const nh = room.players.values().next().value;
       room.hostId = nh.id; nh.isHost = true;
+      // If game is in progress and the departed host was the interviewer, reassign interviewer to new host
+      if (room.phase === 'game' && room.roles.interviewer === socket.id) {
+        room.roles.interviewer = nh.id;
+        const nhPlayer = room.players.get(nh.id);
+        if (nhPlayer) nhPlayer.role = 'interviewer';
+        io.to(code).emit('room:role_reassigned', { role: 'interviewer', newSocketId: nh.id });
+      }
       io.to(code).emit('room:host_changed', { newHostId: nh.id });
     }
     io.to(code).emit('room:player_left', { socketId: socket.id });
