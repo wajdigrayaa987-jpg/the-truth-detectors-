@@ -997,11 +997,10 @@
 
   /* Answer choices panel */
   #answer-choices-panel {
-    position:fixed; bottom:0; left:0; right:0; z-index:450;
+    position:fixed; bottom:0; left:0; right:0; z-index:600;
     background:linear-gradient(180deg, transparent, rgba(0,0,0,0.95) 20%);
     padding:30px 20px 28px; pointer-events:none; opacity:0;
-    transition:opacity 0.4s ease; transform:translateY(20px);
-    transition:opacity 0.4s, transform 0.4s;
+    transition:opacity 0.4s, transform 0.4s; transform:translateY(20px);
   }
   #answer-choices-panel.active { opacity:1; pointer-events:all; transform:translateY(0); }
   .answer-choices-grid {
@@ -4965,18 +4964,22 @@ const S3 = window.S3 = (() => {
   }
 
   function _autoAnswer(q) {
-    // AI always answers correctly
     const respRole = q.answer.role;
     const respIdx  = roleAssignments[respRole] ?? 0;
     const elapsed  = (Date.now() - questionStartTime) / 1000;
     showAnswerChoices(q, respRole);
-    // Stage 5 hook — AI voice line
     if(window._S5) window._S5.onAutoAnswer(respRole);
+    // Wait 2.8s so the player can read all options before AI picks
     setTimeout(()=>{
-      // Track the AI correct answer
-      if(players[respIdx]) players[respIdx]._correct = (players[respIdx]._correct || 0) + 1;
-      resolveAnswer(q, q.correctIdx, respRole, elapsed);
-    }, 900);
+      // Highlight the correct answer visually before resolving
+      const btns = document.querySelectorAll('.answer-choice-btn');
+      if(btns[q.correctIdx]) btns[q.correctIdx].classList.add('correct');
+      // Wait another 1.4s so player sees which one was correct
+      setTimeout(()=>{
+        // AI gets no CP or _correct tracking in SP — only human scores matter
+        resolveAnswer(q, q.correctIdx, respRole, elapsed, true /* isAI */);
+      }, 1400);
+    }, 2800);
   }
 
   // AI interviewer picks the next unanswered question automatically (SP non-interviewer mode)
@@ -5133,19 +5136,17 @@ const S3 = window.S3 = (() => {
   }
 
   // ── Resolve Answer ───────────────────────────────────────────────────
-  function resolveAnswer(q, selectedIdx, forRole, elapsed) {
+  function resolveAnswer(q, selectedIdx, forRole, elapsed, isAI) {
     if(!answerPending) return;
     if(_onlineMode) { resolveAnswerOnline(q, selectedIdx, forRole, elapsed); return; }
     answerPending = false;
     stopTimer();
-    // S7 — clear tension, unfocus canvas
     if(window.S7) { S7.clearTension(); S7.setAnswerFocus(false); }
 
     const isCorrect = (selectedIdx === q.correctIdx);
     const isFast    = elapsed < 5;
     const isSilly   = !isCorrect && selectedIdx >= 2;
-
-    const respIdx = roleAssignments[forRole] ?? 0;
+    const respIdx   = roleAssignments[forRole] ?? 0;
 
     // Visual feedback on choice buttons
     const btns = document.querySelectorAll('.answer-choice-btn');
@@ -5154,47 +5155,45 @@ const S3 = window.S3 = (() => {
       if(i === selectedIdx && !isCorrect) btn.classList.add('wrong');
     });
 
+    // No scoring for AI players in SP
+    const scoreThisAnswer = !(isAI && gameMode === 'sp');
+
     if(isCorrect) {
-      if(players[respIdx]) players[respIdx]._correct = (players[respIdx]._correct || 0) + 1;
+      if(scoreThisAnswer && players[respIdx]) players[respIdx]._correct = (players[respIdx]._correct || 0) + 1;
       document.getElementById('fp-sheet').classList.add('glow-correct');
       setTimeout(()=>document.getElementById('fp-sheet').classList.remove('glow-correct'), 1200);
-      playCorrect();
-      playApplause();
+      playCorrect(); playApplause();
       if(window.atmoEvent) window.atmoEvent(isFast ? 'bonus' : 'correct');
-      // S7 — responder silhouette speaking on correct
       if(window.S7) { S7.setSilActive(forRole); setTimeout(()=>S7.setSilActive('interviewer'), 900); setTimeout(()=>S7.setSilActive(null), 1800); }
-      applyCP(respIdx, 100);
-      showCPPopup('+100', window.innerHeight * 0.45);
-      if(window._S5) window._S5.onAnswerResolved(true);
-      if(isFast) {
-        setTimeout(()=>{
-          applyCP(respIdx, 50);
-          showCPPopup('+50 FAST!', window.innerHeight * 0.35);
-          showTrending();
-        }, 700);
+      if(scoreThisAnswer) {
+        applyCP(respIdx, 100);
+        showCPPopup('+100', window.innerHeight * 0.45);
+        if(window._S5) window._S5.onAnswerResolved(true);
+        if(isFast) {
+          setTimeout(()=>{ applyCP(respIdx, 50); showCPPopup('+50 FAST!', window.innerHeight * 0.35); showTrending(); }, 700);
+        }
       }
     } else {
-      playWrong();
-      playGasp();
+      playWrong(); playGasp();
       const stamp = document.getElementById('fp-red-stamp');
       stamp.classList.add('show');
       haptic([40,30,40]);
       setTimeout(()=>stamp.classList.remove('show'), 1800);
       if(window._S5) window._S5.onAnswerResolved(false);
       if(window.atmoEvent) window.atmoEvent(isSilly ? 'silly' : 'wrong');
-      // S7 — witness/expert looks down (no active sil)
       if(window.S7) { S7.setSilActive(null); setTimeout(()=>S7.setSilActive('interviewer'), 600); setTimeout(()=>S7.setSilActive(null), 1600); }
-
-      if(isSilly) {
-        applyCP(respIdx, -300);
-        showCPPopup('-300', window.innerHeight * 0.45);
-        if(S2.getSettings().comments) {
-          showComment(SARCASTIC_COMMENTS[Math.floor(Math.random()*SARCASTIC_COMMENTS.length)]);
-          return;
+      if(scoreThisAnswer) {
+        if(isSilly) {
+          applyCP(respIdx, -300);
+          showCPPopup('-300', window.innerHeight * 0.45);
+          if(S2.getSettings().comments) {
+            showComment(SARCASTIC_COMMENTS[Math.floor(Math.random()*SARCASTIC_COMMENTS.length)]);
+            return;
+          }
+        } else {
+          applyCP(respIdx, -150);
+          showCPPopup('-150', window.innerHeight * 0.45);
         }
-      } else {
-        applyCP(respIdx, -150);
-        showCPPopup('-150', window.innerHeight * 0.45);
       }
     }
 
