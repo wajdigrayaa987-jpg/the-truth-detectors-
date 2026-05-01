@@ -5548,6 +5548,23 @@ const S3 = window.S3 = (() => {
     endGame();
   }
 
+  // ── resetOnlineState — called when leaving a room mid-game ────────────
+  function _resetOnlineState() {
+    _onlineMode   = false;
+    _onlineMyRole = null;
+    _onlineRoles  = {};
+    _onlinePlayers= [];
+    gameMode      = null;
+  }
+
+  // ── reassignMyRole — called when interviewer host disconnects mid-game ─
+  function _reassignMyRole(role) {
+    _onlineMyRole = role;
+    myRole        = role;
+    const labelEl = document.getElementById('studio-role-label');
+    if (labelEl) labelEl.textContent = _roleLabel(role);
+  }
+
   // ── getScenario — used by S12 to send scenario to server ─────────────
   function getScenario() {
     return SCENARIO;
@@ -5665,6 +5682,8 @@ const S3 = window.S3 = (() => {
     resolveAnswerOnline,
     resumeAfterAnswerOnline,
     isOnline: () => _onlineMode,
+    _resetOnlineState,
+    _reassignMyRole,
   };
 
 })();
@@ -9340,6 +9359,31 @@ const S12 = window.S12 = (() => {
       S2.toast('⚠ Disconnected from server. Reconnecting…');
     });
 
+    socket.on('reconnect', () => {
+      mySocketId = socket.id;
+      isOnline   = true;
+      _setConnBadge('connected', 'online');
+      // If we were in a room, try to rejoin it
+      if (roomCode) {
+        const nameInput = document.getElementById('s12-host-name') || document.getElementById('s12-join-name');
+        const name = (nameInput?.value || '').trim() || (S2.getCurrentUser()?.name) || 'Player';
+        socket.emit('room:rejoin', { code: roomCode, playerName: name });
+        S2.toast('Reconnected — rejoining room…');
+      }
+    });
+
+    socket.on('room:rejoined', ({ code, snapshot, phase, roles, scenario }) => {
+      roomCode = code;
+      _applySnapshot(snapshot);
+      if (phase === 'lobby' || phase === 'roles') {
+        _showRoomScreen(code);
+      }
+      // If mid-game, the game state is already running — just update scores
+      if (phase === 'game' && scenario) {
+        S2.toast('✓ Rejoined mid-game.');
+      }
+    });
+
     socket.on('connect_error', () => {
       _setConnBadge('disconnected', 'server unreachable');
       S2.toast('⚠ Cannot reach server. Check your connection.');
@@ -9366,6 +9410,8 @@ const S12 = window.S12 = (() => {
       _applySnapshot(snapshot);
       _renderPlayerList();
       _updateRoomStatus();
+      // Also refresh role cards if the role screen is active
+      _applyRoleScreenUpdate(snapshot);
     });
 
     socket.on('room:player_left', ({ socketId }) => {
@@ -9378,6 +9424,19 @@ const S12 = window.S12 = (() => {
       isHost = (newHostId === mySocketId);
       if (isHost) S2.toast('You are now the host.');
       _updateRoomStatus();
+    });
+
+    socket.on('room:role_reassigned', ({ role, newSocketId }) => {
+      if (newSocketId === mySocketId) {
+        S2.toast(`⚠ The interviewer left — you are now the ${role}.`);
+        // Update S3 online role if game is running
+        if (window.S3 && S3.isOnline?.()) {
+          S3._reassignMyRole?.(role);
+        }
+      } else {
+        const p = roomPlayers.find(pl => pl.id === newSocketId);
+        S2.toast(`${p?.name || 'A player'} has taken over as ${role}.`);
+      }
     });
 
     socket.on('room:error', ({ msg }) => {
@@ -9447,29 +9506,29 @@ const S12 = window.S12 = (() => {
     });
 
     socket.on('game:question', ({ qId, pageIdx, qIdx, timerStart }) => {
-      if (window.S3) S3.onNetworkQuestion(qId, pageIdx, qIdx, timerStart);
+      if (window.S3) S3.syncNetworkQuestion(qId, pageIdx, qIdx, timerStart);
       _syncFlash();
     });
 
     socket.on('game:answered', ({ socketId, qId, optionIdx, isCorrect, isFast, isSilly, delta, players }) => {
       roomPlayers = players;
       _updateLiveScores(players);
-      if (window.S3) S3.onNetworkAnswer(socketId, qId, optionIdx, isCorrect, isFast, isSilly, delta);
+      if (window.S3) S3.syncNetworkAnswer(socketId, qId, optionIdx, isCorrect, isFast, isSilly, delta);
     });
 
     socket.on('game:timeout', ({ qId, respSocketId, players }) => {
       roomPlayers = players;
       _updateLiveScores(players);
-      if (window.S3) S3.onNetworkTimeout(qId, respSocketId);
+      if (window.S3) S3.syncNetworkTimeout(qId, respSocketId);
     });
 
     socket.on('game:page_turn', ({ pageIdx }) => {
-      if (window.S3) S3.onNetworkPageTurn(pageIdx);
+      if (window.S3) S3.syncNetworkPageTurn(pageIdx);
     });
 
     socket.on('game:over', ({ players }) => {
       roomPlayers = players;
-      if (window.S3) S3.onNetworkGameOver(players);
+      if (window.S3) S3.syncNetworkGameOver(players);
       _hideLiveScores();
       _hideReactBar();
     });
@@ -9512,8 +9571,8 @@ const S12 = window.S12 = (() => {
 
   // ─── Leave room ──────────────────────────────────────────────────────────────
   function leaveRoom() {
-    if (socket) socket.disconnect();
     _reset();
+    if (window.S3 && S3.isOnline?.()) S3._resetOnlineState?.();
     S2.showScreen('mode-screen');
   }
 
@@ -9607,6 +9666,13 @@ const S12 = window.S12 = (() => {
 
   // ─── Back to mode select ─────────────────────────────────────────────────────
   function backToMode() {
+    if (socket && !roomCode) {
+      // Only connected but not in a room yet — safe to disconnect
+      socket.disconnect();
+      socket = null;
+      isOnline = false;
+      _setConnBadge('disconnected', 'offline');
+    }
     S2.showScreen('mode-screen');
   }
 
@@ -9719,6 +9785,34 @@ const S12 = window.S12 = (() => {
     if (fromName !== 'You') S2.toast(`${fromName} reacted ${emoji}`);
   }
 
+  function _applyRoleScreenUpdate(snapshot) {
+    if (S2.getCurrentScreen() !== 'role-screen') return;
+    if (!window.S3 || !S3.isOnline?.()) return;
+    const roles   = snapshot.roles   || {};
+    const players = snapshot.players || [];
+    ['interviewer','expert','witness'].forEach(r => {
+      const sid   = roles[r];
+      const card  = document.getElementById('role-card-'+r);
+      const selEl = document.getElementById('sel-by-'+r);
+      if (!card) return;
+      if (sid) {
+        const p = players.find(pl => pl.id === sid);
+        card.classList.remove('taken');
+        card.classList.add('selected');
+        if(selEl){ selEl.style.display='block'; selEl.textContent = p?.name || 'Player'; }
+        // Lock my own card so I can't claim twice
+        if(sid === mySocketId) card.classList.add('taken');
+      } else {
+        card.classList.remove('selected','taken');
+        if(selEl) selEl.style.display='none';
+      }
+    });
+    // Unlock Begin Broadcast for host when all 3 roles filled
+    const allSet = ['interviewer','expert','witness'].every(r => roles[r]);
+    if(allSet && isHost) S3.unlockContinue();
+    else S3.lockContinue();
+  }
+
   function _reset() {
     roomCode    = null;
     roomPlayers = [];
@@ -9808,35 +9902,7 @@ const S12 = window.S12 = (() => {
       };
 
       // room:update — refresh role cards when on role screen
-      if(socket) {
-        socket.on('room:update', (snapshot) => {
-          if (S2.getCurrentScreen() !== 'role-screen') return;
-          if (!S3.isOnline?.()) return;
-          const roles   = snapshot.roles   || {};
-          const players = snapshot.players || [];
-          ['interviewer','expert','witness'].forEach(r => {
-            const sid   = roles[r];
-            const card  = document.getElementById('role-card-'+r);
-            const selEl = document.getElementById('sel-by-'+r);
-            if (!card) return;
-            if (sid) {
-              const p = players.find(pl => pl.id === sid);
-              card.classList.remove('taken');
-              card.classList.add('selected');
-              if(selEl){ selEl.style.display='block'; selEl.textContent = p?.name || 'Player'; }
-              // Lock my own card so I can't claim twice
-              if(sid === mySocketId) card.classList.add('taken');
-            } else {
-              card.classList.remove('selected','taken');
-              if(selEl) selEl.style.display='none';
-            }
-          });
-          // Unlock Begin Broadcast for host when all 3 roles filled
-          const allSet = ['interviewer','expert','witness'].every(r => roles[r]);
-          if(allSet && isHost) S3.unlockContinue();
-          else S3.lockContinue();
-        });
-      }
+      // NOTE: handled centrally in connect() via _applyRoleScreenUpdate — no second listener needed
 
     }, 800);
   });
