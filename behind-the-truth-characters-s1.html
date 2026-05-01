@@ -1025,8 +1025,9 @@
     box-shadow:0 8px 24px rgba(0,0,0,0.5);
   }
   .answer-choice-btn.correct {
-    border-color:rgba(80,200,80,0.8); background:rgba(10,40,10,0.97);
-    color:#90f090;
+    border-color:rgba(80,200,80,1); background:rgba(10,50,10,0.98);
+    color:#a0ffа0; box-shadow:0 0 18px rgba(80,200,80,0.35),inset 0 0 20px rgba(80,200,80,0.08);
+    transform:scale(1.02);
   }
   .answer-choice-btn.wrong {
     border-color:rgba(200,40,40,0.8); background:rgba(40,5,5,0.97);
@@ -4967,18 +4968,19 @@ const S3 = window.S3 = (() => {
     const respRole = q.answer.role;
     const respIdx  = roleAssignments[respRole] ?? 0;
     const elapsed  = (Date.now() - questionStartTime) / 1000;
-    showAnswerChoices(q, respRole);
+    showAnswerChoices(q, respRole, true /* isAITurn */);
     if(window._S5) window._S5.onAutoAnswer(respRole);
-    // Wait 2.8s so the player can read all options before AI picks
+    // 2.8s to read all options
     setTimeout(()=>{
-      // Highlight the correct answer visually before resolving
+      // Highlight correct answer in green
       const btns = document.querySelectorAll('.answer-choice-btn');
       if(btns[q.correctIdx]) btns[q.correctIdx].classList.add('correct');
-      // Wait another 1.4s so player sees which one was correct
+      // Lock all buttons so nothing looks clickable
+      btns.forEach(b => b.classList.add('locked'));
+      // Keep green visible for 3 full seconds before moving on
       setTimeout(()=>{
-        // AI gets no CP or _correct tracking in SP — only human scores matter
         resolveAnswer(q, q.correctIdx, respRole, elapsed, true /* isAI */);
-      }, 1400);
+      }, 3000);
     }, 2800);
   }
 
@@ -5019,46 +5021,40 @@ const S3 = window.S3 = (() => {
   }
 
   // ── Answer Choices ───────────────────────────────────────────────────
-  function showAnswerChoices(q, forRole) {
+  function showAnswerChoices(q, forRole, isAITurn) {
     const panel = document.getElementById('answer-choices-panel');
     const grid  = document.getElementById('answer-choices-grid');
     const label = document.getElementById('answer-panel-label');
 
-    // S8: theatrical framing label
     const roleVerb = forRole === 'expert' ? 'Expert' : 'Witness';
-    label.textContent = `${roleVerb} — stay in character`;
+    label.textContent = isAITurn ? `${roleVerb} is responding…` : `${roleVerb} — stay in character`;
 
-    // S8: show scene note if available
     const sceneNoteEl = document.getElementById('answer-scene-note');
     if (sceneNoteEl) {
-      if (q.sceneNote) {
-        sceneNoteEl.textContent = q.sceneNote;
-        sceneNoteEl.style.display = 'block';
-      } else {
-        sceneNoteEl.style.display = 'none';
-      }
+      if (q.sceneNote) { sceneNoteEl.textContent = q.sceneNote; sceneNoteEl.style.display = 'block'; }
+      else sceneNoteEl.style.display = 'none';
     }
 
     grid.innerHTML = '';
-
     const keys = ['A','B','C','D'];
     q.options.forEach((opt, i) => {
       const btn = document.createElement('button');
-      btn.className = 'answer-choice-btn';
+      btn.className = 'answer-choice-btn' + (isAITurn ? ' locked' : '');
       btn.dataset.key = keys[i];
       btn.textContent = `${keys[i]}. ${opt}`;
-      btn.addEventListener('click', () => {
-        if(!answerPending) return;
-        const elapsed = (Date.now() - questionStartTime) / 1000;
-        resolveAnswer(q, i, forRole, elapsed);
-      });
+      btn.disabled = !!isAITurn;
+      if(!isAITurn) {
+        btn.addEventListener('click', () => {
+          if(!answerPending) return;
+          const elapsed = (Date.now() - questionStartTime) / 1000;
+          resolveAnswer(q, i, forRole, elapsed);
+        });
+      }
       grid.appendChild(btn);
     });
 
     panel.classList.add('active');
-    // S7 — blur studio, activate responder silhouette
     if(window.S7) { S7.setAnswerFocus(true); S7.setSilActive(forRole); }
-    // Note: Timer is started by the caller (onQuestionSelected / onDeviceReady)
   }
 
   function hideAnswerChoices() {
@@ -5160,8 +5156,11 @@ const S3 = window.S3 = (() => {
 
     if(isCorrect) {
       if(scoreThisAnswer && players[respIdx]) players[respIdx]._correct = (players[respIdx]._correct || 0) + 1;
-      document.getElementById('fp-sheet').classList.add('glow-correct');
-      setTimeout(()=>document.getElementById('fp-sheet').classList.remove('glow-correct'), 1200);
+      // Only glow the paper for human correct answers, not AI
+      if(!isAI) {
+        document.getElementById('fp-sheet').classList.add('glow-correct');
+        setTimeout(()=>document.getElementById('fp-sheet').classList.remove('glow-correct'), 1200);
+      }
       playCorrect(); playApplause();
       if(window.atmoEvent) window.atmoEvent(isFast ? 'bonus' : 'correct');
       if(window.S7) { S7.setSilActive(forRole); setTimeout(()=>S7.setSilActive('interviewer'), 900); setTimeout(()=>S7.setSilActive(null), 1800); }
@@ -5197,7 +5196,8 @@ const S3 = window.S3 = (() => {
       }
     }
 
-    setTimeout(()=>{ hideAnswerChoices(); resumeAfterAnswer(); }, 2000);
+    const hideDelay = isAI ? 2800 : 2000;
+    setTimeout(()=>{ hideAnswerChoices(); resumeAfterAnswer(); }, hideDelay);
   }
 
   function resumeAfterAnswer() {
@@ -5304,15 +5304,75 @@ const S3 = window.S3 = (() => {
     document.getElementById('studio-paper-overlay').classList.remove('active');
     document.getElementById('scoreboard').classList.remove('active');
     stopTimer();
-    // S7 — deactivate atmosphere
     if(window.S7) S7.onGameEnd();
-    // Lights dim then hand to results
-    const dimEl = document.getElementById('lights-dim');
-    if(dimEl) { dimEl.classList.add('dimming'); }
+
+    // ── Broadcast Outro Sequence ──────────────────────────────────────────
+    // Step 1: Show "That's a wrap" banner over the studio
+    const outro = document.createElement('div');
+    outro.id = 'broadcast-outro';
+    outro.style.cssText = `
+      position:fixed;inset:0;z-index:700;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:18px;
+      background:rgba(0,0,0,0);
+      transition:background 1.2s ease;
+      pointer-events:none;
+    `;
+    outro.innerHTML = `
+      <div id="outro-wrap-text" style="
+        font-family:'Playfair Display',serif;font-weight:900;
+        font-size:clamp(32px,8vw,72px);color:#e8d5a3;letter-spacing:-1px;
+        opacity:0;transform:translateY(20px);
+        transition:opacity 0.8s ease,transform 0.8s ease;
+        text-shadow:0 0 60px rgba(201,168,76,0.4);
+      ">That's a Wrap.</div>
+      <div id="outro-sub-text" style="
+        font-family:'Courier Prime',monospace;font-size:clamp(10px,2.5vw,14px);
+        letter-spacing:6px;text-transform:uppercase;color:rgba(201,168,76,0.55);
+        opacity:0;transition:opacity 0.8s ease 0.5s;
+      ">Behind The Truth · Broadcast End</div>
+      <div id="outro-divider" style="
+        width:0px;height:1px;background:rgba(201,168,76,0.35);
+        transition:width 1.2s ease 0.3s;margin-top:8px;
+      "></div>
+    `;
+    document.body.appendChild(outro);
+
+    // Fade in dark overlay
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        outro.style.background = 'rgba(0,0,0,0.82)';
+        document.getElementById('outro-wrap-text').style.opacity = '1';
+        document.getElementById('outro-wrap-text').style.transform = 'translateY(0)';
+        document.getElementById('outro-sub-text').style.opacity = '1';
+        document.getElementById('outro-divider').style.width = '180px';
+      });
+    });
+
+    // Beep sound like broadcast end
+    try {
+      const ac = new (window.AudioContext||window.webkitAudioContext)();
+      [440,550,660].forEach((f,i) => {
+        const o=ac.createOscillator(),g=ac.createGain();
+        o.connect(g);g.connect(ac.destination);
+        o.type='sine';o.frequency.value=f;
+        const t=ac.currentTime+i*0.22;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.18,t+0.06);
+        g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+        o.start(t);o.stop(t+0.45);
+      });
+    } catch(e){}
+
+    // Step 2: After 2.5s — fade out outro then go to results
     setTimeout(() => {
-      S4.showResults(players, SCENARIO, gameMode);
-      setTimeout(() => { if(dimEl) dimEl.classList.remove('dimming'); }, 800);
-    }, 900);
+      outro.style.transition = 'opacity 0.7s ease';
+      outro.style.opacity = '0';
+      setTimeout(() => {
+        outro.remove();
+        S4.showResults(players, SCENARIO, gameMode);
+      }, 720);
+    }, 2600);
   }
 
   // ── Online mode state ─────────────────────────────────────────────────
