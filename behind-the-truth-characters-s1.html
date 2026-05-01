@@ -4169,14 +4169,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'We\'re here to explore fake news and misinformation — how it spreads, why people believe it, and what we can do.', correct:true },
             options:[
-              // CORRECT — calm, analytical, true to the Expert character
-              'We\'re exploring fake news and misinformation — how it spreads, why people believe it, and what we can do to stop it.',
-              // WRONG — dismissive, breaks Expert composure entirely
-              'I\'d rather just wait for the Witness to talk. That\'s the interesting part, not my analysis.',
-              // SILLY — absurd and chaotic, completely shatters the Expert persona
-              'Actually, I came to discuss my new cookbook. The producer told me this was a cooking show.',
-              // WRONG — overly dramatic, factually deflects, breaks analytical character
-              'Misinformation is a hoax created by rival networks. I\'m only here to set the record straight about that.'
+              // CORRECT — calm, analytical, composed. This is what an Expert says.
+              'Tonight we\'re examining how misinformation spreads online — the psychology behind why people believe and share it, and the tools we have to fight back.',
+              // WRONG — Expert dismisses the topic as unimportant, undermining their own role
+              'Honestly, fake news is overblown as an issue. The media talks about it far too much. I\'m here to offer some balance on that.',
+              // WRONG — Expert claims the Witness is lying before they\'ve even spoken
+              'We\'re here to expose the person sitting next to me. I\'ve reviewed their case and I can tell you now — it doesn\'t look good for them.',
+              // SILLY — completely breaks the Expert persona with absurd non-answer
+              'Actually, I came to discuss my new cookbook. The producer told me this was a cooking show.'
             ],
             correctIdx:0
           },
@@ -4187,14 +4187,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'witness', text:'A few days ago I saw a post online claiming a vaccine was dangerous and had caused deaths. It looked very real, so I shared it.', correct:true },
             options:[
-              // CORRECT — nervous but sincere, matches the Witness\'s hesitant, regretful opening
-              'Yes… a few days ago I saw a post claiming a new vaccine was dangerous and had caused deaths. It looked real, so I shared it with my friends and family.',
-              // WRONG — wrong story entirely, the Witness didn\'t write a blog post
-              'I wrote a blog post about online safety that went viral, and the show invited me to discuss responsible sharing.',
-              // SILLY
-              'I am here because my cat walked across my keyboard and accidentally sent a very long email to my entire contact list.',
-              // WRONG — wrong story, Witness didn\'t investigate anything
-              'I investigated a fake news network and exposed them. The show wanted to hear about my research findings.'
+              // CORRECT — nervous and regretful, shares the specific misinformation story
+              'A few days ago I saw a post claiming a new vaccine was dangerous and had caused deaths. It looked completely real… so I shared it.',
+              // WRONG — Witness claims they did nothing wrong and are only here reluctantly
+              'I\'m honestly not sure why I\'m here. I shared one post. Thousands of people do that every day. I was pressured into coming on this show.',
+              // WRONG — Witness invents a heroic narrative — completely wrong character
+              'I\'m here because I actually caught a fake news operation in the act. I\'ve been investigating them for months and I have the evidence.',
+              // SILLY — absurd non-answer that shatters the scene\'s tension
+              'I am here because my cat walked across my keyboard and accidentally sent a very long email to my entire contact list.'
             ],
             correctIdx:0
           },
@@ -4205,32 +4205,32 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'witness', text:'It had thousands of shares and comments, and the images and data looked official. I didn\'t think it could be false.', correct:true },
             options:[
-              // CORRECT — defensive then unsure, exactly the Witness\'s described emotional state
-              'It had thousands of shares and comments, and the images and data seemed official. I honestly didn\'t think it could be false.',
-              // WRONG — claims to be a trained journalist, completely wrong character background
-              'I have a journalism degree, so I applied source-verification techniques. I was confident in my assessment.',
-              // SILLY
-              'I didn\'t read it at all — I just liked the font it was written in. Very convincing typography.',
-              // WRONG — wrong reason, the character didn\'t get a recommendation from anyone
-              'A close friend who works at a hospital personally told me it was true. That\'s why I trusted it completely.'
+              // CORRECT — defensive and unsure, honestly admits why it felt credible
+              'It had thousands of shares already, and the images and statistics looked completely official. It didn\'t even cross my mind that it could be fake.',
+              // WRONG — Witness claims professional expertise they don\'t have
+              'I actually cross-referenced it with three databases before sharing. I have a background in research. I was confident it was accurate.',
+              // WRONG — Witness deflects blame entirely onto the platform
+              'I trusted it because the platform is supposed to remove fake content. If it was still up, that means it passed their checks. That\'s on them, not me.',
+              // SILLY — completely undermines the drama of the scene
+              'I didn\'t read it at all. I just liked the font it was written in. Very authoritative-looking typeface. Serif fonts feel credible.'
             ],
             correctIdx:0
           },
           {
             id:'q4',
-            sceneNote:'🎬 Scene 3 — The Analysis. The Interviewer turns to the Expert.',
+            sceneNote:'🎬 Scene 3 — The Analysis. The Interviewer turns to the Expert for their reaction.',
             text:'What is your reaction to this situation?',
             role:'interviewer',
             answer:{ role:'expert', text:'This is a perfect example of how misinformation spreads. Fake news uses emotional language and manipulated images — people react emotionally and share without verifying.', correct:true },
             options:[
-              // CORRECT — calm and analytical, precisely the Expert\'s composed character
-              'This is a perfect example of how misinformation spreads. Fake news exploits emotional reactions — people share before they think to verify.',
-              // WRONG — judgmental and unkind, breaks the Expert\'s composed professionalism
-              'Honestly? I\'m not surprised. Most people on social media are completely irresponsible. The Witness is a perfect example.',
-              // SILLY — abandons the expert persona entirely in a chaotic way
-              'My reaction? Shock. Not at the misinformation — at how the chairs in this studio are arranged. This feng shui is terrible.',
-              // WRONG — factually contradicts the Expert\'s analytical role
-              'I think the post may have been true, actually. Vaccines are a complicated subject. We should investigate more before judging.'
+              // CORRECT — analytical and composed, explains the mechanism without blame
+              'This is a textbook case. Misinformation is engineered to bypass critical thinking — emotional headlines, official-looking images, high share counts. It works precisely because it feels real.',
+              // WRONG — Expert attacks the Witness personally, breaks professional composure
+              'My reaction? Disappointment. Any responsible adult should verify information before sharing. This was careless and potentially harmful. Full stop.',
+              // WRONG — Expert contradicts established facts and defends the post
+              'I\'d actually want to see the original post before condemning it. Some vaccine concerns are legitimate. I wouldn\'t be so quick to call it fake.',
+              // SILLY — Expert derails the interview with irrelevant personal opinion
+              'Honestly? My reaction is about the studio lighting. It\'s very unflattering in here. Can someone adjust the angle? I look jaundiced on camera.'
             ],
             correctIdx:0
           }
@@ -4248,14 +4248,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'Check the source — unknown sources are suspicious. Watch for exaggerated headlines. And always compare with trusted sources.', correct:true },
             options:[
-              // CORRECT — instructive and clear, true to the Expert\'s explaining character
-              'First, check the source — if it\'s unknown, be careful. Second, watch for emotional or exaggerated headlines. Third, always verify with trusted sources.',
-              // WRONG — anti-intellectual, breaks expert character completely
-              'Honestly, the best sign is just your gut feeling. If it feels right, it probably is. Don\'t overthink it.',
-              // SILLY — surreal and absurd departure from Expert\'s role
-              'I\'ve developed a twelve-step interpretive dance that reveals fake news. I can demonstrate it now if you\'d like.',
-              // WRONG — factually wrong and dismissive, character breaks
-              'Fake news is usually obvious — only very gullible people actually fall for it. There are no real warning signs to explain.'
+              // CORRECT — clear, practical, stays in the Expert analytical lane
+              'Check who published it — if the source is obscure or unknown, that\'s a red flag. Look for emotionally charged headlines designed to shock. And always cross-reference with established, trusted sources before sharing.',
+              // WRONG — Expert gives dangerously bad advice that contradicts their expertise
+              'Honestly, your instincts are usually enough. If something feels true to you, it probably is. Constant fact-checking is exhausting and unnecessary for most people.',
+              // WRONG — Expert claims fake news only affects other people, not the audience
+              'The signs are mostly relevant for older, less digitally literate audiences. If you\'re watching this show, you\'re probably already savvy enough to spot it.',
+              // SILLY — absurd and completely destroys the Expert\'s credibility
+              'I\'ve developed a twelve-step interpretive dance that reveals fake news. I can demonstrate it now if you give me some floor space.'
             ],
             correctIdx:0
           },
@@ -4266,7 +4266,7 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'No. It was completely false. No scientific evidence supported it. It was created to spread fear.', correct:true },
             options:[
-              // CORRECT — firm and direct, exactly the Expert\'s described delivery
+              // CORRECT — firm, direct, unambiguous. The Expert delivers a verdict.
               'No. It was completely false. There was no scientific evidence supporting it — it was created deliberately to spread fear.',
               // WRONG — hedge and equivocate, breaks the Expert\'s firm authority
               'Well, it\'s complicated. Some parts might be accurate and some parts might not be. Science is always evolving.',
@@ -4284,14 +4284,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'witness', text:'I feel embarrassed and really bad for sharing it. I didn\'t know it was false. I\'m ashamed.', correct:true },
             options:[
-              // CORRECT — embarrassed and regretful, exactly the Witness\'s described emotional state
-              'I… I feel embarrassed. I didn\'t know. I feel really bad for sharing it. I\'m genuinely ashamed of what I did.',
-              // WRONG — wrong emotion entirely, the character is shocked not proud
-              'Honestly I feel proud. I helped raise awareness. Even if the post was wrong, the conversation it started was important.',
-              // SILLY
-              'How do I feel? Hungry, mainly. Can we wrap this up? I have dinner reservations.',
-              // WRONG — wrong story, the character didn\'t check anything beforehand
-              'I feel vindicated, actually. I checked everything carefully before sharing. The problem is with the original source, not me.'
+              // CORRECT — ashamed and honest, the Witness owns the mistake completely
+              'I feel… embarrassed. Really embarrassed. I didn\'t check. I just shared it. And now knowing it was false — I feel genuinely ashamed.',
+              // WRONG — Witness feels proud and defiant, the opposite of their character arc
+              'Honestly? I feel like I did the right thing. Even if the specific post was wrong, I was trying to protect people. I stand by my intentions.',
+              // WRONG — Witness blames the Expert rather than accepting responsibility
+              'I feel like I\'m being made to look bad on national television. This expert has had it out for me since the beginning of this interview.',
+              // SILLY — completely undermines the emotional weight of the scene
+              'I feel hungry, mainly. Also a little cold — the studio is very draughty. Can we wrap this up? I have a dinner reservation.'
             ],
             correctIdx:0
           },
@@ -4302,14 +4302,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'Don\'t be too hard on yourself. Many people fall into this trap. What matters is learning from it.', correct:true },
             options:[
-              // CORRECT — gentle and reassuring, matches the Expert\'s described tone shift
-              'Don\'t be too hard on yourself. Many people fall into this trap. What matters now is learning from it and moving forward more carefully.',
-              // WRONG — harsh and judgmental, breaks the Expert\'s gentle reassurance
-              'You should absolutely be hard on yourself. This kind of carelessness is dangerous. It\'s a serious failure of character.',
-              // SILLY — condescending absurdist non-answer
-              'I\'d send them a strongly worded letter sealed with wax and delivered by a very serious owl.',
-              // WRONG — dismisses the importance of the lesson entirely
-              'I would tell them not to worry at all. Misinformation doesn\'t really have consequences. It\'s just the internet.'
+              // CORRECT — compassionate and constructive, the Expert's tone shifts to warmth
+              'Don\'t be too hard on yourself. This happens to many people — the trap is designed to be convincing. What matters is recognising it and doing better next time.',
+              // WRONG — Expert is cold and punishing, tells them to feel worse
+              'They should be hard on themselves. This was irresponsible. Embarrassment is the appropriate response and I hope they carry it for a while.',
+              // WRONG — Expert dismisses the whole incident as trivial
+              'I\'d tell them not to worry about it at all. Nobody really tracks these things. One shared post is not a crisis.',
+              // SILLY — absurd advice that destroys the Expert's authority
+              'I\'d send them a strongly worded letter sealed with wax and delivered by a very serious owl wearing a tiny graduation cap.'
             ],
             correctIdx:0
           }
@@ -4327,14 +4327,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'Pause before sharing. Verify the information. Think critically. Educate yourself about media literacy.', correct:true },
             options:[
-              // CORRECT — confident and instructive, matches the Expert\'s Scene 5 energy
-              'Pause before sharing. Verify the information. Think critically. And educate yourself about media literacy — it\'s the most important thing.',
-              // WRONG — passive and fatalistic, breaks Expert\'s confident character
-              'There\'s not much we can do, honestly. Fake news will always exist. Just try to stay offline as much as possible.',
-              // SILLY — chaotic and completely off-brand for the Expert
-              'I recommend everyone adopt a pet fact-checking parrot. Mine is named Evidence and he\'s very reliable.',
-              // WRONG — authoritarian and off-character
-              'The government should monitor everyone\'s social media posts and delete anything suspicious before it spreads.'
+              // CORRECT — confident, actionable, and stays firmly in the Expert's instructional lane
+              'Pause before you share anything. Verify it with trusted sources. Think critically about why it\'s making you feel something. And invest in your own media literacy — that\'s the long game.',
+              // WRONG — Expert gives up entirely, fatalistic and defeatist
+              'Honestly, very little. Fake news is built into the system at this point. The most realistic advice is just to use the internet less.',
+              // WRONG — Expert pushes authoritarian surveillance as the only solution
+              'Governments need to monitor all social media posts before they go live and flag anything suspicious. Individual action isn\'t enough.',
+              // SILLY — chaotic and completely destroys the Expert's gravitas
+              'I recommend everyone adopt a pet fact-checking parrot. Mine is called Evidence. He\'s saved me from seventeen false headlines this year alone.'
             ],
             correctIdx:0
           },
@@ -4345,14 +4345,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'witness', text:'Don\'t believe everything you see online. Take a moment to check the truth before sharing.', correct:true },
             options:[
-              // CORRECT — sincere and emotional, the Witness\'s redemptive closing line
-              'Don\'t believe everything you see online. Take a moment — just a moment — to check the truth before you share anything.',
-              // WRONG — claims expert credentials the Witness never had
-              'As someone who now works in digital literacy education, my message is: enroll in a certified media course.',
-              // SILLY
-              'My message to the public is: follow me on social media. I have very good content. Very accurate. Mostly.',
-              // WRONG — completely wrong character, the Witness is remorseful not activist
-              'My message is: join me in suing the platform that allowed this post to spread. I\'m launching a class action.'
+              // CORRECT — humble, direct, and exactly the Witness's redemptive note
+              'Please — don\'t believe everything you see online. Just take a moment. One moment to check before you share. That\'s all it takes.',
+              // WRONG — Witness tries to turn their mistake into a career, self-serving and off-brand
+              'My message is: I\'m launching a digital literacy campaign next month. Follow my page for updates. This experience actually inspired me to become an influencer.',
+              // WRONG — Witness deflects all blame onto tech companies, no personal responsibility
+              'My message is for the platforms. They allowed this content to exist. Until they fix their algorithms, this will keep happening. Don\'t blame ordinary users.',
+              // SILLY — chaotic non-answer that kills the sincerity of the closing
+              'My message is: follow me on social media. I have very good content now. Very verified. I triple-check everything. Mostly.'
             ],
             correctIdx:0
           },
@@ -4363,14 +4363,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'expert', text:'Truth matters. Each of us has a responsibility to protect it.', correct:true },
             options:[
-              // CORRECT — strong and inspiring, the Expert\'s defined closing line
-              'Truth matters. Each of us has a responsibility to protect it. That\'s not optional — it\'s what we owe each other.',
-              // WRONG — defeatist and breaks the inspiring close
-              'Truth matters, but nobody really cares anymore. I\'ve lost hope. I\'m only here for the appearance fee.',
-              // SILLY — absurdist and destroys the gravitas of the closing
-              'Truth matters — but have you considered: what if we all just agreed that everything is equally true? Food for thought.',
-              // WRONG — political deflection that breaks the Expert\'s non-partisan, analytical role
-              'The real message is: subscribe to reputable newspapers. Print media is the only trustworthy source left.'
+              // CORRECT — authoritative and resonant, the Expert's thesis delivered with conviction
+              'Truth matters. And protecting it is not someone else\'s job. Each of us — every person who uses the internet — has a responsibility to uphold it.',
+              // WRONG — Expert is bitter and defeatist, undermines the show's message entirely
+              'Truth matters — but I\'ll be honest with you, I\'ve been doing this for twenty years and I\'m not sure anyone is listening anymore. Goodnight.',
+              // WRONG — Expert pivots to a commercial product endorsement, breaks all integrity
+              'My message is: subscribe to reputable print newspapers. Digital media is fundamentally broken. I\'ve said this for years and I stand by it.',
+              // SILLY — Expert undermines the entire premise of the show with absurdist philosophy
+              'Truth matters — but consider this: what if everything is equally true and we\'ve been the fake news all along? I\'ll leave that with you. Goodnight.'
             ],
             correctIdx:0
           },
@@ -4381,14 +4381,14 @@ const S3 = window.S3 = (() => {
             role:'interviewer',
             answer:{ role:'witness', text:'Let\'s work together to fight misinformation and defend the truth. It starts with each one of us.', correct:true },
             options:[
-              // CORRECT — sincere, collaborative, and true to the Witness\'s redemptive arc
-              'Let\'s work together to fight misinformation and defend the truth. It starts with each one of us — including me.',
-              // WRONG — boastful, Witness is supposed to be humble not self-congratulatory
-              'I\'d like to thank myself for being brave enough to come here. Not everyone could sit in this chair and admit what I did.',
-              // SILLY — chaotic final line
-              'Actually, I\'d like to announce that I\'m starting a podcast. It will be called "I Was Wrong Online" and it drops Thursday.',
-              // WRONG — deflects personal responsibility, contradicts the Witness\'s arc
-              'My final word: the government must regulate social media immediately. Individual responsibility is a myth.'
+              // CORRECT — collaborative, humble, and completes the Witness's redemption arc
+              'Let\'s work together to fight misinformation and defend the truth. It starts with each one of us. It started, for me, tonight.',
+              // WRONG — Witness is self-congratulatory, completely wrong tone for their arc
+              'I just want to say — it took real courage to sit in this chair tonight. Not everyone could do this. I\'m proud of myself for showing up.',
+              // WRONG — Witness pivots to anger at being invited on the show
+              'My final word is: I feel I was ambushed tonight. I came here in good faith and I was made to look foolish. I\'m speaking to my lawyer tomorrow.',
+              // SILLY — chaotic announcement that destroys the closing mood
+              'Final words? Yes — I\'m launching a podcast. It\'s called "I Was Wrong Online." It drops Thursday. Link in bio.'
             ],
             correctIdx:0
           }
